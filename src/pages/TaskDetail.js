@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Delete, CloudUpload } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../api/index'; // Path to your configured api instance
 
 const TaskDetail = () => {
   const { id } = useParams();
@@ -28,7 +28,7 @@ const TaskDetail = () => {
   useEffect(() => {
     const fetchTask = async () => {
       try {
-        const { data } = await axios.get(`/api/tasks/${id}`);
+        const { data } = await api.get(`/api/tasks/${id}`);
         setTask(data);
         setFormData({
           title: data.title,
@@ -49,7 +49,7 @@ const TaskDetail = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const { data } = await axios.get('/api/users');
+        const { data } = await api.get('/api/users');
         setUsers(data);
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -68,8 +68,8 @@ const TaskDetail = () => {
 
   const handleSubmit = async () => {
     try {
-      await axios.put(`/api/tasks/${id}`, formData);
-      const { data } = await axios.get(`/api/tasks/${id}`);
+      await api.put(`/api/tasks/${id}`, formData);
+      const { data } = await api.get(`/api/tasks/${id}`);
       setTask(data);
       setEditing(false);
     } catch (error) {
@@ -79,8 +79,8 @@ const TaskDetail = () => {
 
   const handleStatusChange = async (status) => {
     try {
-      await axios.patch(`/api/tasks/${id}/status`, { status });
-      const { data } = await axios.get(`/api/tasks/${id}`);
+      await api.patch(`/api/tasks/${id}/status`, { status });
+      const { data } = await api.get(`/api/tasks/${id}`);
       setTask(data);
       setFormData(prev => ({ ...prev, status }));
     } catch (error) {
@@ -99,13 +99,13 @@ const TaskDetail = () => {
       const formData = new FormData();
       formData.append('files', file);
       
-      await axios.post(`/api/tasks/${id}/files`, formData, {
+      await api.post(`/api/tasks/${id}/files`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      const { data } = await axios.get(`/api/tasks/${id}`);
+      const { data } = await api.get(`/api/tasks/${id}`);
       setTask(data);
       setFile(null);
     } catch (error) {
@@ -115,8 +115,8 @@ const TaskDetail = () => {
 
   const handleFileDelete = async (fileId) => {
     try {
-      await axios.delete(`/api/tasks/${id}/files/${fileId}`);
-      const { data } = await axios.get(`/api/tasks/${id}`);
+      await api.delete(`/api/tasks/${id}/files/${fileId}`);
+      const { data } = await api.get(`/api/tasks/${id}`);
       setTask(data);
     } catch (error) {
       console.error('Error deleting file:', error);

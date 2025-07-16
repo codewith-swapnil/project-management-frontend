@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Card, CardContent, CircularProgress } from '@mui/material';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import axios from 'axios';
+import api from '../api/index'; // Path to your configured api instance
 import { useAuth } from '../contexts/AuthContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -15,7 +15,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await axios.get('/api/dashboard');
+        const { data } = await api.get('/api/auth/dashboard');
         setStats(data);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);

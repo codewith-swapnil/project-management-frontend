@@ -1,17 +1,19 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL || '';
-
-// Add a response interceptor
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000',
+  headers: {
+    'x-api-key': process.env.REACT_APP_API_KEY || 'your-default-api-key-here'
   }
-);
+});
 
-export default axios;
+// Add request interceptor to include auth token if exists
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;

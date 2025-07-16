@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress } from '@mui/material';
-import axios from 'axios';
+import api from '../api/index'; // Path to your configured api instance
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -11,7 +11,7 @@ const Projects = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const { data } = await axios.get('/api/projects');
+        const { data } = await api.get('/api/projects');
         setProjects(data);
       } catch (error) {
         console.error('Error fetching projects:', error);

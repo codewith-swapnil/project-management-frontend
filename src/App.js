@@ -19,7 +19,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-              <Route index element={<Dashboard />} />
+              <Route index path="/dashboard" element={<Dashboard />} />
             </Route>
           </Routes>
         </AuthProvider>

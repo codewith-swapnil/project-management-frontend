@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/index'; // Path to your configured api instance
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,15 +14,17 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       const decoded = jwtDecode(token);
       setUser(decoded);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
   const login = async (email, password) => {
     try {
-      const { data } = await axios.post('/api/auth/login', { email, password });
+      const { data } = await api.post('/api/auth/login', { email, password });
+      console.log('Login successful', data); // Add this line for debugging
+      console.log('Setting token:', data.token); // Add this line for debugging
       localStorage.setItem('token', data.token);
       setToken(data.token);
       navigate('/dashboard');
@@ -33,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const { data } = await axios.post('/api/auth/register', userData);
+      const { data } = await api.post('/api/auth/register', userData);
       localStorage.setItem('token', data.token);
       setToken(data.token);
       navigate('/dashboard');

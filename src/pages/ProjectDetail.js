@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Button, Typography, Card, CardContent, Grid, TextField, CircularProgress, MenuItem, Chip } from '@mui/material';
-import axios from 'axios';
+import api from '../api/index'; // Path to your configured api instance
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -14,7 +14,7 @@ const ProjectDetail = () => {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const { data } = await axios.get(`/api/projects/${id}`);
+        const { data } = await api.get(`/api/projects/${id}`);
         setProject(data);
       } catch (error) {
         console.error('Error fetching project:', error);
@@ -28,7 +28,7 @@ const ProjectDetail = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const { data } = await axios.get('/api/users');
+        const { data } = await api.get('/api/users');
         setUsers(data);
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -39,8 +39,8 @@ const ProjectDetail = () => {
 
   const handleAddMember = async () => {
     try {
-      await axios.post(`/api/projects/${id}/members`, { userId: selectedUser });
-      const { data } = await axios.get(`/api/projects/${id}`);
+      await api.post(`/api/projects/${id}/members`, { userId: selectedUser });
+      const { data } = await api.get(`/api/projects/${id}`);
       setProject(data);
       setSelectedUser('');
     } catch (error) {
@@ -50,8 +50,8 @@ const ProjectDetail = () => {
 
   const handleRemoveMember = async (memberId) => {
     try {
-      await axios.delete(`/api/projects/${id}/members/${memberId}`);
-      const { data } = await axios.get(`/api/projects/${id}`);
+      await api.delete(`/api/projects/${id}/members/${memberId}`);
+      const { data } = await api.get(`/api/projects/${id}`);
       setProject(data);
     } catch (error) {
       console.error('Error removing member:', error);

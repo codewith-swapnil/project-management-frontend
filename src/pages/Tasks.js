@@ -6,7 +6,7 @@ import {
   Grid, Chip 
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import axios from 'axios';
+import api from '../api/index'; // Path to your configured api instance
 import { Card } from '@mui/material';
 
 const Tasks = () => {
@@ -30,7 +30,7 @@ const Tasks = () => {
         if (filters.dueDateFrom) params.dueDateFrom = filters.dueDateFrom.toISOString();
         if (filters.dueDateTo) params.dueDateTo = filters.dueDateTo.toISOString();
         
-        const { data } = await axios.get('/api/tasks', { params });
+        const { data } = await api.get('/api/tasks', { params });
         setTasks(data);
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -44,7 +44,7 @@ const Tasks = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const { data } = await axios.get('/api/users');
+        const { data } = await api.get('/api/users');
         setUsers(data);
       } catch (error) {
         console.error('Error fetching users:', error);
