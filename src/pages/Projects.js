@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress } from '@mui/material';
-import api from '../api/index'; // Path to your configured api instance
+import api from '../api/index';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -12,6 +12,7 @@ const Projects = () => {
     const fetchProjects = async () => {
       try {
         const { data } = await api.get('/api/projects');
+        console.log('Projects data:', data); // Debugging line
         setProjects(data);
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -34,9 +35,18 @@ const Projects = () => {
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Projects</Typography>
-        <Button variant="contained" onClick={() => navigate('/projects/new')}>
-          Create Project
-        </Button>
+        <Box>
+          <Button 
+            variant="outlined" 
+            onClick={() => navigate('/dashboard')} 
+            sx={{ marginRight: 2 }}
+          >
+            Go to Dashboard
+          </Button>
+          <Button variant="contained" onClick={() => navigate('/projects/new')}>
+            Create Project
+          </Button>
+        </Box>
       </Box>
       
       <TableContainer component={Paper}>
@@ -58,7 +68,13 @@ const Projects = () => {
                 <TableCell>{project.createdBy?.name}</TableCell>
                 <TableCell>{project.members?.length}</TableCell>
                 <TableCell>
-                  <Button onClick={() => navigate(`/projects/${project._id}`)}>
+                  <Button onClick={() => {
+                    if (!project._id) {
+                      console.error('Project ID is missing:', project);
+                      return;
+                    }
+                    navigate(`/projects/${project._id}`);
+                  }}>
                     View
                   </Button>
                 </TableCell>

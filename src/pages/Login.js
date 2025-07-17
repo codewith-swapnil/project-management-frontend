@@ -7,15 +7,25 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+    
     try {
-      await login(email, password);
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err);
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,8 +64,9 @@ const Login = () => {
             variant="contained"
             fullWidth
             sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </Button>
           <Typography align="center">
             Don't have an account?{' '}

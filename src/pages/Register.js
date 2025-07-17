@@ -8,7 +8,7 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    role: 'User'
+    role: 'user'
   });
   const [error, setError] = useState('');
   const { register } = useAuth();
