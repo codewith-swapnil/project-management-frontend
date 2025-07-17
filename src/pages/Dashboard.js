@@ -1,269 +1,189 @@
-import { useEffect, useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Card, 
-  CardContent, 
-  CircularProgress,
-  Button,
-  Link
-} from '@mui/material';
-import { Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Link as RouterLink } from 'react-router-dom';
-import api from '../api/index';
 import { useAuth } from '../contexts/AuthContext';
-
-ChartJS.register(ArcElement, Tooltip, Legend);
+import { Box, Typography, Card, CardContent, Grid, LinearProgress, Alert } from '@mui/material';
+import { Folder, Assignment, CheckCircle, HourglassEmpty, PlayCircleFilled } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
+import api from '../api/index'; // Update with correct path
 
 const Dashboard = () => {
-  const [stats, setStats] = useState(null);
+  const { user, logout } = useAuth();
+  const [stats, setStats] = useState({
+    projectCount: 0,
+    taskCount: 0,
+    statusCounts: { Todo: 0, 'In Progress': 0, Completed: 0 }
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardStats = async () => {
       try {
-        const { data } = await api.get('/api/auth/dashboard');
-        if (!data?.success || !data.data) {
-          throw new Error('Invalid data format');
+        setLoading(true);
+        setError(null);
+        const response = await api.get('/api/auth/dashboard');
+        setStats(response.data.data);
+      } catch (err) {
+        console.error('Dashboard error:', err);
+        if (err.response?.status === 401) {
+          logout();
+        } else {
+          setError(err.response?.data?.message || 'Failed to load dashboard data');
         }
-        setStats(data.data);
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchStats();
-  }, []);
 
-  if (loading) {
+    if (user) {
+      fetchDashboardStats();
+    }
+  }, [user, logout]);
+
+  if (!user) {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
+        <Typography>Please log in to view the dashboard</Typography>
       </Box>
     );
+  }
+
+  if (loading) {
+    return <LinearProgress />;
   }
 
   if (error) {
     return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <Typography color="error">Error: {error}</Typography>
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
-  if (!stats) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <Typography>No data available</Typography>
-      </Box>
-    );
-  }
-
-  const taskStatusData = {
-    labels: ['Todo', 'In Progress', 'Completed'],
-    datasets: [
-      {
-        data: [
-          stats.statusCounts?.Todo || 0,
-          stats.statusCounts?.['In Progress'] || 0,
-          stats.statusCounts?.Completed || 0,
-        ],
-        backgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#4BC0C0',
-        ],
-      },
-    ],
-  };
+  const { projectCount, taskCount, statusCounts } = stats;
+  const totalTasks = statusCounts.Todo + statusCounts['In Progress'] + statusCounts.Completed;
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Welcome, {user?.name || 'User'}
+      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+        Welcome, {user.name}!
       </Typography>
 
-      {/* Quick Links Section */}
-      <Box mb={4}>
-        <Grid container spacing={2}>
-          <Grid item>
-            <Button 
-              variant="contained" 
-              component={RouterLink} 
-              to="/projects"
-              color="primary"
-            >
-              View All Projects
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button 
-              variant="outlined" 
-              component={RouterLink} 
-              to="/tasks"
-              color="primary"
-            >
-              View All Tasks
-            </Button>
-          </Grid>
-          {stats.recentProject && (
-            <Grid item>
-              <Button 
-                variant="text" 
-                component={RouterLink} 
-                to={`/projects/${stats.recentProject._id}`}
-                color="secondary"
-              >
-                Go to Recent Project
-              </Button>
-            </Grid>
-          )}
-        </Grid>
-      </Box>
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Card>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Project Count Card */}
+        <Grid item xs={12} md={6} lg={3}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" color="textSecondary">
-                Projects
-              </Typography>
-              <Typography variant="h4">
-                {stats.projectCount || 0}
-              </Typography>
-              <Box mt={2}>
-                <Link 
-                  component={RouterLink} 
-                  to="/projects" 
-                  color="primary"
-                  underline="hover"
-                >
-                  View Projects
-                </Link>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Folder color="primary" sx={{ fontSize: 40, mr: 2 }} />
+                <Typography variant="h5">My Projects</Typography>
               </Box>
+              <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
+                {projectCount}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Currently participating
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Card>
+        {/* Task Count Card */}
+        <Grid item xs={12} md={6} lg={3}>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="h6" color="textSecondary">
-                Total Tasks
-              </Typography>
-              <Typography variant="h4">
-                {stats.taskCount || 0}
-              </Typography>
-              <Box mt={2}>
-                <Link 
-                  component={RouterLink} 
-                  to="/tasks" 
-                  color="primary"
-                  underline="hover"
-                >
-                  View All Tasks
-                </Link>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Assignment color="secondary" sx={{ fontSize: 40, mr: 2 }} />
+                <Typography variant="h5">My Tasks</Typography>
               </Box>
+              <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
+                {taskCount}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total assigned
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="textSecondary">
-                Tasks Assigned to You
-              </Typography>
-              <Typography variant="h4">
-                {stats.assignedTasksCount || 0} {/* Assuming you add this to your stats */}
-              </Typography>
-              <Box mt={2}>
-                <Link 
-                  component={RouterLink} 
-                  to="/tasks?filter=assigned" 
-                  color="primary"
-                  underline="hover"
-                >
-                  View Your Tasks
-                </Link>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" gutterBottom>
-                  Task Status Distribution
-                </Typography>
-                <Button 
-                  component={RouterLink} 
-                  to="/tasks" 
-                  size="small"
-                  color="primary"
-                >
-                  Manage Tasks
-                </Button>
-              </Box>
-              <Box height={300}>
-                <Pie data={taskStatusData} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Recent Projects Section */}
-        {stats.recentProjects && stats.recentProjects.length > 0 && (
-          <Grid item xs={12}>
-            <Card>
+        {/* Status Cards */}
+        {Object.entries(statusCounts).map(([status, count]) => (
+          <Grid item xs={12} md={6} lg={3} key={status}>
+            <Card sx={{ height: '100%' }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Recent Projects
+                <Box display="flex" alignItems="center" mb={2}>
+                  {status === 'Completed' && <CheckCircle color="success" sx={{ fontSize: 40, mr: 2 }} />}
+                  {status === 'In Progress' && <PlayCircleFilled color="info" sx={{ fontSize: 40, mr: 2 }} />}
+                  {status === 'Todo' && <HourglassEmpty color="warning" sx={{ fontSize: 40, mr: 2 }} />}
+                  <Typography variant="h5">{status}</Typography>
+                </Box>
+                <Typography variant="h3" component="div" sx={{ fontWeight: 'bold' }}>
+                  {count}
                 </Typography>
-                <Grid container spacing={2}>
-                  {stats.recentProjects.map(project => (
-                    <Grid item xs={12} sm={6} md={4} key={project._id}>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Typography variant="subtitle1">
-                            <Link 
-                              component={RouterLink} 
-                              to={`/projects/${project._id}`}
-                              underline="hover"
-                            >
-                              {project.name}
-                            </Link>
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {project.description?.substring(0, 50)}...
-                          </Typography>
-                          <Box mt={1}>
-                            <Button 
-                              component={RouterLink} 
-                              to={`/projects/${project._id}`}
-                              size="small"
-                              color="primary"
-                            >
-                              View Details
-                            </Button>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
+                <Typography variant="body2" color="text.secondary">
+                  {totalTasks > 0 ? `${Math.round((count / totalTasks) * 100)}% of tasks` : 'No tasks'}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
-        )}
+        ))}
+      </Grid>
+
+      {/* Task Status Visualization */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Task Status Breakdown
+              </Typography>
+              <Box sx={{ height: 300, display: 'flex', flexDirection: 'column' }}>
+                {Object.entries(statusCounts).map(([status, count]) => (
+                  <Box key={status} sx={{ mb: 2 }}>
+                    <Box display="flex" justifyContent="space-between" mb={1}>
+                      <Typography>{status}</Typography>
+                      <Typography>{count} ({totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0}%)</Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={totalTasks > 0 ? (count / totalTasks) * 100 : 0}
+                      sx={{
+                        height: 10,
+                        borderRadius: 5,
+                        backgroundColor: 'grey.200',
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor:
+                            status === 'Completed' ? 'success.main' :
+                              status === 'In Progress' ? 'info.main' : 'warning.main'
+                        }
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Project Overview
+              </Typography>
+              <Box sx={{
+                height: 300,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                color: 'text.secondary',
+                flexDirection: 'column'
+              }}>
+                <Assignment sx={{ fontSize: 80, mb: 2 }} />
+                <Typography variant="h6">Total Projects: {projectCount}</Typography>
+                <Typography>Tasks across all projects: {taskCount}</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
     </Box>
   );

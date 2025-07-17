@@ -3,8 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Button, Typography, Card, CardContent, Grid,
   TextField, CircularProgress, MenuItem, Chip, Alert,
-  List, ListItem, ListItemText, Divider, Badge
+  List, ListItem, ListItemText, Divider, Badge, Avatar,
+  IconButton, Tooltip
 } from '@mui/material';
+import {
+  ArrowBack as BackIcon,
+  PersonAdd as AddMemberIcon,
+  PersonRemove as RemoveMemberIcon,
+  AddTask as AddTaskIcon,
+  MoreVert as MoreIcon
+} from '@mui/icons-material';
 import api from '../api/index';
 
 const ProjectDetail = () => {
@@ -114,8 +122,8 @@ const ProjectDetail = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress size={60} />
       </Box>
     );
   }
@@ -123,8 +131,14 @@ const ProjectDetail = () => {
   if (error) {
     return (
       <Box p={3}>
-        <Alert severity="error">{error}</Alert>
-        <Button onClick={() => navigate('/projects')} sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button 
+          onClick={() => navigate('/projects')} 
+          startIcon={<BackIcon />}
+          variant="outlined"
+        >
           Back to Projects
         </Button>
       </Box>
@@ -134,8 +148,14 @@ const ProjectDetail = () => {
   if (!project) {
     return (
       <Box p={3}>
-        <Alert severity="warning">Project not found</Alert>
-        <Button onClick={() => navigate('/projects')} sx={{ mt: 2 }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Project not found
+        </Alert>
+        <Button 
+          onClick={() => navigate('/projects')} 
+          startIcon={<BackIcon />}
+          variant="outlined"
+        >
           Back to Projects
         </Button>
       </Box>
@@ -143,46 +163,129 @@ const ProjectDetail = () => {
   }
 
   return (
-    <Box>
-      <Button onClick={() => navigate('/projects')} sx={{ mb: 2 }}>
+    <Box sx={{ p: 3, backgroundColor: '#f5f7fa', minHeight: '100vh' }}>
+      <Button 
+        onClick={() => navigate('/projects')} 
+        startIcon={<BackIcon />}
+        sx={{ 
+          mb: 3,
+          textTransform: 'none',
+          color: 'primary.main',
+          '&:hover': {
+            backgroundColor: 'primary.light',
+            color: 'primary.dark'
+          }
+        }}
+      >
         Back to Projects
       </Button>
 
-      <Card sx={{ mb: 4 }}>
+      <Card sx={{ 
+        mb: 4, 
+        borderRadius: 2,
+        boxShadow: 3,
+        backgroundColor: 'background.paper'
+      }}>
         <CardContent>
-          <Typography variant="h4" gutterBottom>
+          <Typography 
+            variant="h4" 
+            gutterBottom
+            sx={{ 
+              fontWeight: 700,
+              color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
             {project.title}
           </Typography>
-          <Typography variant="body1" gutterBottom>
+          <Typography 
+            variant="body1" 
+            gutterBottom
+            sx={{ 
+              color: 'text.secondary',
+              lineHeight: 1.6
+            }}
+          >
             {project.description}
           </Typography>
-          <Typography variant="subtitle2" color="textSecondary">
-            Created by: {project.createdBy?.name || 'Unknown'}
-          </Typography>
+          <Box display="flex" alignItems="center" mt={2}>
+            <Avatar 
+              src={project.createdBy?.avatar} 
+              sx={{ 
+                width: 32, 
+                height: 32, 
+                mr: 1,
+                border: '1px solid',
+                borderColor: 'divider'
+              }} 
+            />
+            <Typography variant="subtitle2" color="textSecondary">
+              Created by: {project.createdBy?.name || 'Unknown'}
+            </Typography>
+          </Box>
         </CardContent>
       </Card>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            borderRadius: 1,
+            boxShadow: 1
+          }}
+        >
           {error}
         </Alert>
       )}
 
       <Grid container spacing={3}>
+        {/* Members Card */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ 
+            height: '100%',
+            borderRadius: 2,
+            boxShadow: 3,
+            backgroundColor: 'background.paper'
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Members ({project.members?.length || 0})
-              </Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ 
+                    fontWeight: 600,
+                    color: 'text.primary'
+                  }}
+                >
+                  Team Members ({project.members?.length || 0})
+                </Typography>
+              </Box>
 
-              <Box display="flex" alignItems="center" mb={2}>
+              <Box 
+                display="flex" 
+                alignItems="center" 
+                mb={3}
+                sx={{
+                  backgroundColor: 'action.hover',
+                  p: 2,
+                  borderRadius: 1
+                }}
+              >
                 <TextField
                   select
-                  label="Add Member"
+                  label="Add Team Member"
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
-                  sx={{ minWidth: 200, mr: 2 }}
+                  sx={{ 
+                    minWidth: 200, 
+                    mr: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1
+                    }
+                  }}
+                  size="small"
                   disabled={!users.length}
                 >
                   <MenuItem value="" disabled>
@@ -192,14 +295,35 @@ const ProjectDetail = () => {
                     .filter(user => !project.members?.some(m => m._id === user._id))
                     .map((user) => (
                       <MenuItem key={user._id} value={user._id}>
-                        {user.name} ({user.email})
+                        <Box display="flex" alignItems="center">
+                          <Avatar 
+                            src={user.avatar} 
+                            sx={{ 
+                              width: 24, 
+                              height: 24, 
+                              mr: 1.5,
+                              border: '1px solid',
+                              borderColor: 'divider'
+                            }} 
+                          />
+                          {user.name} ({user.email})
+                        </Box>
                       </MenuItem>
                     ))}
                 </TextField>
                 <Button
                   variant="contained"
+                  startIcon={<AddMemberIcon />}
                   onClick={handleAddMember}
                   disabled={!selectedUser}
+                  sx={{
+                    borderRadius: 1,
+                    textTransform: 'none',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      boxShadow: 'none'
+                    }
+                  }}
                 >
                   Add
                 </Button>
@@ -207,55 +331,114 @@ const ProjectDetail = () => {
 
               <Box>
                 {project.members?.length ? (
-                  project.members.map((member) => (
-                    <Chip
-                      key={member._id}
-                      label={`${member.name} (${member.email})`}
-                      onDelete={() => handleRemoveMember(member._id)}
-                      sx={{ m: 0.5 }}
-                    />
-                  ))
+                  <Box 
+                    sx={{ 
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 1
+                    }}
+                  >
+                    {project.members.map((member) => (
+                      <Chip
+                        key={member._id}
+                        avatar={<Avatar src={member.avatar} />}
+                        label={`${member.name || 'Unknown'}${member.email ? ` (${member.email})` : ''}`}
+                        onDelete={() => handleRemoveMember(member._id)}
+                        deleteIcon={
+                          <Tooltip title="Remove member">
+                            <RemoveMemberIcon />
+                          </Tooltip>
+                        }
+                        sx={{ 
+                          borderRadius: 1,
+                          '& .MuiChip-avatar': {
+                            width: 32,
+                            height: 32
+                          }
+                        }}
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
                 ) : (
-                  <Typography variant="body2" color="textSecondary">
-                    No members yet
-                  </Typography>
+                  <Box 
+                    sx={{ 
+                      p: 3,
+                      textAlign: 'center',
+                      backgroundColor: 'action.hover',
+                      borderRadius: 1
+                    }}
+                  >
+                    <Typography variant="body2" color="textSecondary">
+                      No team members yet. Add members to collaborate on this project.
+                    </Typography>
+                  </Box>
                 )}
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
+        {/* Tasks Card */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ 
+            height: '100%',
+            borderRadius: 2,
+            boxShadow: 3,
+            backgroundColor: 'background.paper'
+          }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6" gutterBottom>
-                  Tasks ({tasks.length})
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ 
+                    fontWeight: 600,
+                    color: 'text.primary'
+                  }}
+                >
+                  Project Tasks ({tasks.length})
                 </Typography>
                 <Button
                   variant="contained"
+                  startIcon={<AddTaskIcon />}
                   onClick={() => navigate(`/projects/${projectId}/tasks/new`)}
+                  sx={{
+                    borderRadius: 1,
+                    textTransform: 'none',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      boxShadow: 'none'
+                    }
+                  }}
                 >
-                  Create Task
+                  New Task
                 </Button>
               </Box>
 
               {tasksLoading ? (
-                <Box display="flex" justifyContent="center" mt={2}>
-                  <CircularProgress size={24} />
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="100px">
+                  <CircularProgress size={40} />
                 </Box>
               ) : tasks.length > 0 ? (
-                <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+                <List sx={{ 
+                  width: '100%', 
+                  bgcolor: 'background.paper',
+                  borderRadius: 1,
+                  overflow: 'hidden'
+                }}>
                   {tasks.map((task, index) => (
                     <Box key={task._id}>
-                      <ListItem 
-                        alignItems="flex-start" 
-                        button 
+                      <ListItem
+                        alignItems="flex-start"
+                        button
                         onClick={() => handleTaskClick(task._id)}
                         sx={{
                           '&:hover': {
                             backgroundColor: 'action.hover',
-                          }
+                          },
+                          transition: 'background-color 0.2s',
+                          py: 2
                         }}
                       >
                         <ListItemText
@@ -264,42 +447,100 @@ const ProjectDetail = () => {
                               <Badge
                                 color={getStatusColor(task.status)}
                                 variant="dot"
-                                sx={{ mr: 1 }}
+                                sx={{ mr: 2 }}
                               />
-                              <Typography variant="subtitle1" component="span">
+                              <Typography 
+                                variant="subtitle1" 
+                                component="span"
+                                sx={{ fontWeight: 500 }}
+                              >
                                 {task.title}
                               </Typography>
                             </Box>
                           }
                           secondary={
                             <>
-                              <Typography
-                                component="span"
-                                variant="body2"
-                                color="text.primary"
-                                display="block"
+                              {task.description && (
+                                <Typography
+                                  component="span"
+                                  variant="body2"
+                                  color="text.primary"
+                                  display="block"
+                                  sx={{ 
+                                    mt: 0.5,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
+                                >
+                                  {task.description}
+                                </Typography>
+                              )}
+                              <Box 
+                                display="flex" 
+                                alignItems="center"
+                                sx={{ mt: 1 }}
                               >
-                                {task.description}
-                              </Typography>
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                {task.status} • Due: {new Date(task.dueDate).toLocaleDateString()}
-                              </Typography>
+                                <Chip
+                                  label={task.status}
+                                  size="small"
+                                  color={getStatusColor(task.status)}
+                                  sx={{ 
+                                    mr: 1,
+                                    fontWeight: 500
+                                  }}
+                                />
+                                <Typography
+                                  component="span"
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Due: {new Date(task.dueDate).toLocaleDateString()}
+                                </Typography>
+                              </Box>
                             </>
                           }
                         />
+                        <IconButton edge="end" aria-label="more">
+                          <MoreIcon />
+                        </IconButton>
                       </ListItem>
-                      {index < tasks.length - 1 && <Divider component="li" />}
+                      {index < tasks.length - 1 && (
+                        <Divider 
+                          component="li" 
+                          sx={{ 
+                            mx: 2,
+                            borderColor: 'divider'
+                          }} 
+                        />
+                      )}
                     </Box>
                   ))}
                 </List>
               ) : (
-                <Typography variant="body2" color="textSecondary">
-                  No tasks yet. Create one to get started!
-                </Typography>
+                <Box 
+                  sx={{ 
+                    p: 3,
+                    textAlign: 'center',
+                    backgroundColor: 'action.hover',
+                    borderRadius: 1
+                  }}
+                >
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    No tasks yet. Create one to get started!
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddTaskIcon />}
+                    onClick={() => navigate(`/projects/${projectId}/tasks/new`)}
+                    sx={{
+                      borderRadius: 1,
+                      textTransform: 'none'
+                    }}
+                  >
+                    Create First Task
+                  </Button>
+                </Box>
               )}
             </CardContent>
           </Card>
