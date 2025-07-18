@@ -1,14 +1,14 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { Routes, Route, Navigate } from 'react-router-dom'; // Removed BrowserRouter import
-import theme from './theme';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import theme from './theme'; // Your updated theme
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import CreateProject from './pages/CreateProject';
 import ProjectDetail from './pages/ProjectDetail';
 import Tasks from './pages/Tasks';
-import EditTask from './pages/TaskDetail';
+import EditTask from './pages/TaskDetail'; // Assuming TaskDetail is now EditTask
 import CreateTask from './pages/CreateTask';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -18,7 +18,7 @@ import PrivateRoute from './components/PrivateRoute';
 function App() {
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
+      <CssBaseline /> {/* Applies global reset and background color from theme */}
       <AuthProvider>
         <Routes>
           {/* Public routes */}

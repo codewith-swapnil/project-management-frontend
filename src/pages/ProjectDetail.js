@@ -4,16 +4,50 @@ import {
   Box, Button, Typography, Card, CardContent, Grid,
   TextField, CircularProgress, MenuItem, Chip, Alert,
   List, ListItem, ListItemText, Divider, Badge, Avatar,
-  IconButton, Tooltip
+  IconButton, Tooltip, Container, Paper
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
   PersonAdd as AddMemberIcon,
   PersonRemove as RemoveMemberIcon,
   AddTask as AddTaskIcon,
-  MoreVert as MoreIcon
+  Edit as EditIcon,
+  Group as GroupIcon,
+  Assignment as AssignmentIcon
 } from '@mui/icons-material';
 import api from '../api/index';
+import { styled } from '@mui/system';
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[4],
+  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow: theme.shadows[7],
+  },
+  backgroundColor: theme.palette.background.paper,
+}));
+
+const StyledListItem = styled(ListItem)(({ theme }) => ({
+  padding: theme.spacing(1.5, 2.5),
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+    cursor: 'pointer',
+    transform: 'translateX(5px)',
+  },
+  transition: 'background-color 0.2s ease-in-out, transform 0.2s ease-in-out',
+  borderRadius: theme.shape.borderRadius,
+  marginBottom: theme.spacing(0.5),
+}));
+
+const statusColors = {
+  'Todo': 'info',
+  'In Progress': 'primary',
+  'Completed': 'success',
+  'Blocked': 'error',
+  'In Review': 'warning',
+};
 
 const ProjectDetail = () => {
   const { projectId } = useParams();
@@ -32,24 +66,21 @@ const ProjectDetail = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch project, users, and tasks in parallel
         const [projectRes, usersRes, tasksRes] = await Promise.all([
           api.get(`/api/projects/${projectId}`),
           api.get('/api/auth/users'),
           api.get(`/api/tasks/project/${projectId}`)
         ]);
 
-        // Transform the data to match frontend expectations
         const projectData = projectRes.data;
         const allUsers = usersRes.data;
         const projectTasks = tasksRes.data;
 
-        // Enhance project data with user details
         const enhancedProject = {
           ...projectData,
-          createdBy: allUsers.find(user => user._id === projectData.createdBy) || { _id: projectData.createdBy },
+          createdBy: allUsers.find(user => user._id === projectData.createdBy) || { _id: projectData.createdBy, name: 'Unknown User' },
           members: projectData.members.map(memberId =>
-            allUsers.find(user => user._id === memberId) || { _id: memberId }
+            allUsers.find(user => user._id === memberId) || { _id: memberId, name: 'Unknown User' }
           )
         };
 
@@ -61,7 +92,7 @@ const ProjectDetail = () => {
         const errorMessage = error.response
           ? error.response.data?.message || error.response.statusText || 'Request failed'
           : error.message;
-        setError(`Failed to load project data: ${errorMessage}`);
+        setError(`Failed to load project details: ${errorMessage}. Please try refreshing.`);
       } finally {
         setLoading(false);
       }
@@ -70,191 +101,192 @@ const ProjectDetail = () => {
     fetchData();
   }, [projectId]);
 
-  const fetchTasks = async () => {
+  const fetchTasksForProject = async () => {
     try {
       setTasksLoading(true);
-      const { data } = await api.get(`/api/tasks?project=${projectId}`);
+      const { data } = await api.get(`/api/tasks/project/${projectId}`);
       setTasks(data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      setError(error.response?.data?.message || 'Failed to load tasks');
+      setError(error.response?.data?.message || 'Failed to load tasks for this project.');
     } finally {
       setTasksLoading(false);
     }
   };
 
   const handleAddMember = async () => {
+    if (!selectedUser) return;
     try {
       await api.post(`/api/projects/${projectId}/members`, { userId: selectedUser });
-      const { data } = await api.get(`/api/projects/${projectId}`);
-      setProject(data);
+      const { data: updatedProjectData } = await api.get(`/api/projects/${projectId}`);
+      const updatedMembers = updatedProjectData.members.map(memberId =>
+        users.find(user => user._id === memberId) || { _id: memberId, name: 'Unknown User' }
+      );
+      setProject(prev => ({ ...prev, members: updatedMembers }));
       setSelectedUser('');
     } catch (error) {
       console.error('Error adding member:', error);
-      setError(error.response?.data?.message || 'Failed to add member');
+      setError(error.response?.data?.message || 'Failed to add member.');
     }
   };
 
   const handleRemoveMember = async (memberId) => {
     try {
       await api.delete(`/api/projects/${projectId}/members/${memberId}`);
-      const { data } = await api.get(`/api/projects/${projectId}`);
-      setProject(data);
+      const { data: updatedProjectData } = await api.get(`/api/projects/${projectId}`);
+      const updatedMembers = updatedProjectData.members.map(mId =>
+        users.find(user => user._id === mId) || { _id: mId, name: 'Unknown User' }
+      );
+      setProject(prev => ({ ...prev, members: updatedMembers }));
     } catch (error) {
       console.error('Error removing member:', error);
-      setError(error.response?.data?.message || 'Failed to remove member');
+      setError(error.response?.data?.message || 'Failed to remove member.');
     }
   };
 
   const handleTaskClick = (taskId) => {
-    navigate(`/projects/${projectId}/tasks/${taskId}`);
+    navigate(`/tasks/${taskId}`);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'To Do': return 'default';
-      case 'In Progress': return 'primary';
-      case 'In Review': return 'warning';
-      case 'Done': return 'success';
-      default: return 'default';
-    }
+  const handleEditTask = (taskId, e) => {
+    e.stopPropagation();
+    navigate(`/tasks/${taskId}/edit`);
+  };
+
+  const getStatusChipColor = (status) => {
+    return statusColors[status] || 'default';
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress size={60} />
-      </Box>
+      <Container maxWidth="md" sx={{ mt: 8, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <CircularProgress size={60} sx={{ mb: 2 }} />
+        <Typography variant="h6" color="text.secondary">Loading project details...</Typography>
+      </Container>
     );
   }
 
-  if (error) {
+  if (error && !project) {
     return (
-      <Box p={3}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-        <Button 
-          onClick={() => navigate('/projects')} 
-          startIcon={<BackIcon />}
-          variant="outlined"
-        >
-          Back to Projects
-        </Button>
-      </Box>
+      <Container maxWidth="md" sx={{ mt: 8 }}>
+        <Paper elevation={3} sx={{ p: 4, textAlign: 'center', bgcolor: 'error.main', color: 'error.contrastText', borderRadius: 2 }}>
+          <Typography variant="h5" gutterBottom>Error Loading Project</Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>{error}</Typography>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/projects')}
+            startIcon={<BackIcon />}
+            sx={{ bgcolor: 'error.light', '&:hover': { bgcolor: 'error.dark' } }}
+          >
+            Back to Projects
+          </Button>
+        </Paper>
+      </Container>
     );
   }
 
   if (!project) {
     return (
-      <Box p={3}>
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Project not found
-        </Alert>
-        <Button 
-          onClick={() => navigate('/projects')} 
+      <Container maxWidth="md" sx={{ mt: 8 }}>
+        <Paper elevation={3} sx={{ p: 4, textAlign: 'center', bgcolor: 'warning.main', color: 'warning.contrastText', borderRadius: 2 }}>
+          <Typography variant="h5" gutterBottom>Project Not Found</Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>The project you are looking for does not exist or you do not have access.</Typography>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/projects')}
+            startIcon={<BackIcon />}
+            color="warning"
+          >
+            Back to Projects
+          </Button>
+        </Paper>
+      </Container>
+    );
+  }
+
+  const availableUsersToAdd = users.filter(user =>
+    !project.members?.some(m => m._id === user._id)
+  );
+
+  return (
+    <Container maxWidth="lg" sx={{ pt: 4, pb: 6, backgroundColor: 'transparent' }}>
+      <Box mb={4} display="flex" justifyContent="flex-start" alignItems="center"> {/* Changed justifyContent to flex-start */}
+        <Button
+          onClick={() => navigate('/projects')}
           startIcon={<BackIcon />}
-          variant="outlined"
+          sx={{
+            textTransform: 'none',
+            color: 'text.secondary',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            }
+          }}
         >
           Back to Projects
         </Button>
       </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ p: 3, backgroundColor: '#f5f7fa', minHeight: '100vh' }}>
-      <Button 
-        onClick={() => navigate('/projects')} 
-        startIcon={<BackIcon />}
-        sx={{ 
-          mb: 3,
-          textTransform: 'none',
-          color: 'primary.main',
-          '&:hover': {
-            backgroundColor: 'primary.light',
-            color: 'primary.dark'
-          }
-        }}
-      >
-        Back to Projects
-      </Button>
-
-      <Card sx={{ 
-        mb: 4, 
-        borderRadius: 2,
-        boxShadow: 3,
-        backgroundColor: 'background.paper'
-      }}>
-        <CardContent>
-          <Typography 
-            variant="h4" 
-            gutterBottom
-            sx={{ 
-              fontWeight: 700,
-              color: 'primary.main',
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            {project.title}
-          </Typography>
-          <Typography 
-            variant="body1" 
-            gutterBottom
-            sx={{ 
-              color: 'text.secondary',
-              lineHeight: 1.6
-            }}
-          >
-            {project.description}
-          </Typography>
-          <Box display="flex" alignItems="center" mt={2}>
-            <Avatar 
-              src={project.createdBy?.avatar} 
-              sx={{ 
-                width: 32, 
-                height: 32, 
-                mr: 1,
-                border: '1px solid',
-                borderColor: 'divider'
-              }} 
-            />
-            <Typography variant="subtitle2" color="textSecondary">
-              Created by: {project.createdBy?.name || 'Unknown'}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
 
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            mb: 3,
-            borderRadius: 1,
-            boxShadow: 1
-          }}
-        >
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 1, boxShadow: 1 }}>
           {error}
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        {/* Members Card */}
+      <StyledCard sx={{ mb: 4, '&:hover': { transform: 'none', boxShadow: 4 } }}>
+        <CardContent>
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            sx={{
+              fontWeight: 700,
+              color: 'primary.dark',
+              display: 'flex',
+              alignItems: 'center',
+              mb: 2
+            }}
+          >
+            {project.title}
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: 'text.secondary',
+              lineHeight: 1.6,
+              mb: 2
+            }}
+          >
+            {project.description || 'No description provided for this project.'}
+          </Typography>
+          <Box display="flex" alignItems="center" mt={2} sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
+            <Avatar
+              src={project.createdBy?.avatar || '/default-user.png'}
+              alt={project.createdBy?.name || 'Unknown User'}
+              sx={{
+                width: 36,
+                height: 36,
+                mr: 1.5,
+                border: '2px solid',
+                borderColor: 'primary.light'
+              }}
+            />
+            <Typography variant="subtitle2" color="text.secondary">
+              Created by: <Typography component="span" variant="subtitle2" fontWeight="medium">{project.createdBy?.name || 'Unknown'}</Typography> on {new Date(project.createdAt).toLocaleDateString()}
+            </Typography>
+          </Box>
+        </CardContent>
+      </StyledCard>
+
+      <Grid container spacing={4}>
         <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            height: '100%',
-            borderRadius: 2,
-            boxShadow: 3,
-            backgroundColor: 'background.paper'
-          }}>
+          <StyledCard>
             <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom
-                  sx={{ 
+              <Box display="flex" alignItems="center" mb={2}>
+                <GroupIcon color="primary" sx={{ mr: 1.5, fontSize: 30 }} />
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{
                     fontWeight: 600,
                     color: 'text.primary'
                   }}
@@ -263,14 +295,16 @@ const ProjectDetail = () => {
                 </Typography>
               </Box>
 
-              <Box 
-                display="flex" 
-                alignItems="center" 
+              <Box
+                display="flex"
+                alignItems="center"
                 mb={3}
                 sx={{
-                  backgroundColor: 'action.hover',
+                  backgroundColor: 'action.selected',
                   p: 2,
-                  borderRadius: 1
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider'
                 }}
               >
                 <TextField
@@ -278,38 +312,40 @@ const ProjectDetail = () => {
                   label="Add Team Member"
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
-                  sx={{ 
-                    minWidth: 200, 
+                  fullWidth
+                  sx={{
                     mr: 2,
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: 1
+                      borderRadius: 1,
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'text.secondary'
                     }
                   }}
                   size="small"
-                  disabled={!users.length}
+                  disabled={!availableUsersToAdd.length}
                 >
                   <MenuItem value="" disabled>
-                    Select a user
+                    <em>{availableUsersToAdd.length ? "Select a user" : "No new users to add"}</em>
                   </MenuItem>
-                  {users
-                    .filter(user => !project.members?.some(m => m._id === user._id))
-                    .map((user) => (
-                      <MenuItem key={user._id} value={user._id}>
-                        <Box display="flex" alignItems="center">
-                          <Avatar 
-                            src={user.avatar} 
-                            sx={{ 
-                              width: 24, 
-                              height: 24, 
-                              mr: 1.5,
-                              border: '1px solid',
-                              borderColor: 'divider'
-                            }} 
-                          />
-                          {user.name} ({user.email})
-                        </Box>
-                      </MenuItem>
-                    ))}
+                  {availableUsersToAdd.map((user) => (
+                    <MenuItem key={user._id} value={user._id}>
+                      <Box display="flex" alignItems="center">
+                        <Avatar
+                          src={user.avatar || '/default-user.png'}
+                          alt={user.name}
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            mr: 1.5,
+                            border: '1px solid',
+                            borderColor: 'divider'
+                          }}
+                        />
+                        <Typography variant="body2">{user.name} ({user.email})</Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
                 </TextField>
                 <Button
                   variant="contained"
@@ -319,9 +355,10 @@ const ProjectDetail = () => {
                   sx={{
                     borderRadius: 1,
                     textTransform: 'none',
-                    boxShadow: 'none',
+                    boxShadow: 2,
                     '&:hover': {
-                      boxShadow: 'none'
+                      boxShadow: 4,
+                      backgroundColor: 'primary.dark'
                     }
                   }}
                 >
@@ -331,74 +368,82 @@ const ProjectDetail = () => {
 
               <Box>
                 {project.members?.length ? (
-                  <Box 
-                    sx={{ 
+                  <Box
+                    sx={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: 1
+                      gap: 1.5,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      p: 1,
+                      border: '1px dashed',
+                      borderColor: 'divider',
+                      borderRadius: 1
                     }}
                   >
                     {project.members.map((member) => (
                       <Chip
                         key={member._id}
-                        avatar={<Avatar src={member.avatar} />}
-                        label={`${member.name || 'Unknown'}${member.email ? ` (${member.email})` : ''}`}
+                        avatar={<Avatar src={member.avatar || '/default-user.png'} alt={member.name} />}
+                        label={`${member.name || 'Unknown'}${member.email ? ` (${member.email.split('@')[0]})` : ''}`}
                         onDelete={() => handleRemoveMember(member._id)}
                         deleteIcon={
-                          <Tooltip title="Remove member">
+                          <Tooltip title="Remove member from project">
                             <RemoveMemberIcon />
                           </Tooltip>
                         }
-                        sx={{ 
-                          borderRadius: 1,
+                        color="primary"
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          pr: 0.5,
                           '& .MuiChip-avatar': {
-                            width: 32,
-                            height: 32
+                            width: 28,
+                            height: 28,
+                            bgcolor: 'primary.light'
                           }
                         }}
-                        variant="outlined"
                       />
                     ))}
                   </Box>
                 ) : (
-                  <Box 
-                    sx={{ 
+                  <Box
+                    sx={{
                       p: 3,
                       textAlign: 'center',
                       backgroundColor: 'action.hover',
-                      borderRadius: 1
+                      borderRadius: 1,
+                      border: '1px dashed',
+                      borderColor: 'divider'
                     }}
                   >
-                    <Typography variant="body2" color="textSecondary">
-                      No team members yet. Add members to collaborate on this project.
+                    <Typography variant="body2" color="text.secondary">
+                      No team members yet. Use the selector above to add members and collaborate!
                     </Typography>
                   </Box>
                 )}
               </Box>
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
 
-        {/* Tasks Card */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            height: '100%',
-            borderRadius: 2,
-            boxShadow: 3,
-            backgroundColor: 'background.paper'
-          }}>
+          <StyledCard>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom
-                  sx={{ 
-                    fontWeight: 600,
-                    color: 'text.primary'
-                  }}
-                >
-                  Project Tasks ({tasks.length})
-                </Typography>
+                <Box display="flex" alignItems="center">
+                  <AssignmentIcon color="primary" sx={{ mr: 1.5, fontSize: 30 }} />
+                  <Typography
+                    variant="h5"
+                    component="h2"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary'
+                    }}
+                  >
+                    Project Tasks ({tasks.length})
+                  </Typography>
+                </Box>
                 <Button
                   variant="contained"
                   startIcon={<AddTaskIcon />}
@@ -406,9 +451,10 @@ const ProjectDetail = () => {
                   sx={{
                     borderRadius: 1,
                     textTransform: 'none',
-                    boxShadow: 'none',
+                    boxShadow: 2,
                     '&:hover': {
-                      boxShadow: 'none'
+                      boxShadow: 4,
+                      backgroundColor: 'secondary.dark'
                     }
                   }}
                 >
@@ -417,56 +463,52 @@ const ProjectDetail = () => {
               </Box>
 
               {tasksLoading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="100px">
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="150px">
                   <CircularProgress size={40} />
                 </Box>
               ) : tasks.length > 0 ? (
-                <List sx={{ 
-                  width: '100%', 
-                  bgcolor: 'background.paper',
+                <List sx={{
+                  width: '100%',
+                  bgcolor: 'background.default',
                   borderRadius: 1,
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  maxHeight: 400,
+                  overflowY: 'auto',
+                  border: '1px solid',
+                  borderColor: 'divider'
                 }}>
                   {tasks.map((task, index) => (
                     <Box key={task._id}>
-                      <ListItem
+                      <StyledListItem
                         alignItems="flex-start"
-                        button
                         onClick={() => handleTaskClick(task._id)}
-                        sx={{
-                          '&:hover': {
-                            backgroundColor: 'action.hover',
-                          },
-                          transition: 'background-color 0.2s',
-                          py: 2
-                        }}
                       >
                         <ListItemText
                           primary={
-                            <Box display="flex" alignItems="center">
+                            <Box component="span" display="flex" alignItems="center">
                               <Badge
-                                color={getStatusColor(task.status)}
+                                color={getStatusChipColor(task.status)}
                                 variant="dot"
-                                sx={{ mr: 2 }}
+                                sx={{ mr: 1.5, '& .MuiBadge-dot': { width: 10, height: 10, borderRadius: '50%' } }}
                               />
-                              <Typography 
-                                variant="subtitle1" 
+                              <Typography
                                 component="span"
-                                sx={{ fontWeight: 500 }}
+                                variant="subtitle1"
+                                sx={{ fontWeight: 500, color: 'text.primary' }}
                               >
                                 {task.title}
                               </Typography>
                             </Box>
                           }
                           secondary={
-                            <>
+                            <Box component="span">
                               {task.description && (
                                 <Typography
                                   component="span"
                                   variant="body2"
-                                  color="text.primary"
+                                  color="text.secondary"
                                   display="block"
-                                  sx={{ 
+                                  sx={{
                                     mt: 0.5,
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
@@ -476,58 +518,74 @@ const ProjectDetail = () => {
                                   {task.description}
                                 </Typography>
                               )}
-                              <Box 
-                                display="flex" 
+                              <Box
+                                component="span"
+                                display="flex"
                                 alignItems="center"
                                 sx={{ mt: 1 }}
                               >
                                 <Chip
                                   label={task.status}
                                   size="small"
-                                  color={getStatusColor(task.status)}
-                                  sx={{ 
+                                  color={getStatusChipColor(task.status)}
+                                  sx={{
                                     mr: 1,
-                                    fontWeight: 500
+                                    fontWeight: 500,
+                                    borderRadius: 1,
+                                    fontSize: '0.75rem'
                                   }}
                                 />
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  Due: {new Date(task.dueDate).toLocaleDateString()}
-                                </Typography>
+                                {task.dueDate && (
+                                  <Typography
+                                    component="span"
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    Due: {new Date(task.dueDate).toLocaleDateString()}
+                                  </Typography>
+                                )}
                               </Box>
-                            </>
+                            </Box>
                           }
                         />
-                        <IconButton edge="end" aria-label="more">
-                          <MoreIcon />
-                        </IconButton>
-                      </ListItem>
+                        <Tooltip title="Edit Task">
+                          <IconButton
+                            edge="end"
+                            aria-label="edit"
+                            onClick={(e) => handleEditTask(task._id, e)}
+                            sx={{ color: 'text.secondary' }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </StyledListItem>
                       {index < tasks.length - 1 && (
-                        <Divider 
-                          component="li" 
-                          sx={{ 
+                        <Divider
+                          component="li"
+                          variant="inset"
+                          sx={{
                             mx: 2,
-                            borderColor: 'divider'
-                          }} 
+                            borderColor: 'divider',
+                            opacity: 0.7
+                          }}
                         />
                       )}
                     </Box>
                   ))}
                 </List>
               ) : (
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     p: 3,
                     textAlign: 'center',
                     backgroundColor: 'action.hover',
-                    borderRadius: 1
+                    borderRadius: 1,
+                    border: '1px dashed',
+                    borderColor: 'divider'
                   }}
                 >
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                    No tasks yet. Create one to get started!
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    No tasks yet for this project. Be the first to create one!
                   </Typography>
                   <Button
                     variant="outlined"
@@ -543,10 +601,10 @@ const ProjectDetail = () => {
                 </Box>
               )}
             </CardContent>
-          </Card>
+          </StyledCard>
         </Grid>
       </Grid>
-    </Box>
+    </Container>
   );
 };
 

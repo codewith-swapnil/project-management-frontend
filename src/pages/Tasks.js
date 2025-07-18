@@ -223,7 +223,7 @@ const Tasks = () => {
             Task Management
           </Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <Button
+            {/* <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleCreateTask}
@@ -242,7 +242,7 @@ const Tasks = () => {
               }}
             >
               New Task
-            </Button>
+            </Button> */}
             <Tooltip title="Go to Dashboard">
               <IconButton
                 onClick={() => navigate('/dashboard')}
