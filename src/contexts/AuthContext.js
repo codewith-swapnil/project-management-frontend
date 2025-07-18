@@ -8,7 +8,27 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false); // Add this line
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        if (decoded.exp * 1000 > Date.now()) {
+          setToken(storedToken);
+          setUser(decoded);
+          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        } else {
+          localStorage.removeItem('token');
+        }
+      } catch (error) {
+        localStorage.removeItem('token');
+      }
+    }
+    setIsInitialized(true); // Mark initialization as complete
+  }, []);
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -89,7 +109,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isInitialized, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

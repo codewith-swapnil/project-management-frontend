@@ -5,9 +5,10 @@ import theme from './theme';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
+import CreateProject from './pages/CreateProject';
 import ProjectDetail from './pages/ProjectDetail';
 import Tasks from './pages/Tasks';
-import TaskDetail from './pages/TaskDetail';
+import EditTask from './pages/TaskDetail';
 import CreateTask from './pages/CreateTask';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -29,9 +30,10 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/new" element={<CreateProject />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
             <Route path="/tasks" element={<Tasks />} />
-            <Route path="/tasks/:taskId" element={<TaskDetail />} />
+            <Route path="/tasks/:taskId/edit" element={<EditTask />} />
             <Route path="/projects/:projectId/tasks/new" element={<CreateTask />} />
           </Route>
 

@@ -62,7 +62,18 @@ const Projects = () => {
             <List>
               {projects.map((project, index) => (
                 <Box key={project._id}>
-                  <ListItem button onClick={() => navigate(`/projects/${project._id}`)}>
+                  <ListItem 
+                    component="button" // Changed from button={true} to component="button"
+                    onClick={() => navigate(`/projects/${project._id}`)}
+                    sx={{
+                      width: '100%',
+                      textAlign: 'left',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                        cursor: 'pointer'
+                      }
+                    }}
+                  >
                     <ListItemText
                       primary={project.title}
                       secondary={project.description}
