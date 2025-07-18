@@ -1,70 +1,102 @@
-# Getting Started with Create React App
+# Project Management Frontend 🚀
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This repository hosts the frontend application for a comprehensive Project Management System. Built with React and Material-UI, it provides an intuitive and responsive user interface for managing projects, tasks, and team members, seamlessly interacting with a separate backend API.
 
-## Available Scripts
+-----
 
-In the project directory, you can run:
+## ✨ Features
 
-### `npm start`
+  * **Responsive Design:** Optimized for various screen sizes (desktop, tablet, mobile).
+  * **User Authentication:** Secure signup and login flows.
+  * **Dashboard View:** Overview of assigned projects and tasks.
+  * **Project Management:** Create, view, update, and delete projects.
+  * **Task Management:** Create, view, update, and delete tasks within projects, including status updates.
+  * **Member Management:** Add and remove team members from projects.
+  * **Modern UI:** Leverages Material-UI for a sleek and consistent user experience.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+-----
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠️ Technologies Used
 
-### `npm test`
+  * **React:** A JavaScript library for building user interfaces.
+  * **Material-UI (MUI):** A popular React UI framework implementing Google's Material Design.
+  * **React Router DOM:** For declarative routing within the application.
+  * **Axios:** A promise-based HTTP client for making API requests to the backend.
+  * **Vite:** A fast build tool that provides a rapid development environment.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+-----
 
-### `npm run build`
+## 📦 Getting Started
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+  * Node.js (v18 or higher recommended)
+  * npm or Yarn
+  * Git
+  * A running instance of the [Task Manager Backend](https://github.com/codewith-swapnil/task-manager-backend) (either locally or deployed).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1.  **Clone the repository:**
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+    ```bash
+    git clone https://github.com/codewith-swapnil/project-management-frontend.git
+    cd project-management-frontend
+    ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2.  **Install dependencies:**
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+    ```bash
+    npm install # or yarn install
+    ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Environment Variables (.env)
 
-## Learn More
+Create a file named `.env` in the root directory of the frontend project. This file will store the base URL of your backend API.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```dotenv
+VITE_REACT_APP_API_BASE_URL=http://localhost:5000/api
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+  * **`VITE_REACT_APP_API_BASE_URL`**: This variable should point to the base URL of your backend API.
+      * For **local development**, it will typically be `http://localhost:5000/api` (or whatever port your backend is running on).
+      * For **production deployment**, you will update this to the URL of your deployed backend (e.g., `https://your-deployed-backend.render.com/api`).
 
-### Code Splitting
+-----
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🏃 Running Locally
 
-### Analyzing the Bundle Size
+1.  **Start the backend server:** Ensure your [Task Manager Backend](https://github.com/codewith-swapnil/task-manager-backend) is running locally (e.g., `npm start` in its directory).
+2.  **Start the frontend development server:**
+    ```bash
+    npm run dev # or yarn dev
+    ```
+    The application will typically open in your browser at `http://localhost:5173` (or another available port).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+-----
 
-### Making a Progressive Web App
+## 🌐 Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+This frontend application is a static site and can be easily deployed on various platforms.
 
-### Advanced Configuration
+  * **Hosting:** [Vercel](https://vercel.com/) (recommended), [Netlify](https://www.netlify.com/), or Render's Static Site service.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Deployment Setup (Environment Variables on Hosting Platforms)
 
-### Deployment
+When deploying, you will need to set the `VITE_REACT_APP_API_BASE_URL` environment variable directly on the hosting platform. **Do NOT commit your `.env` file to Git.**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+  * **Vercel/Netlify/Render:**
+      * Go to your project settings -\> Environment Variables.
+      * Add `VITE_REACT_APP_API_BASE_URL` and set its value to your **deployed backend's API URL** (e.g., `https://your-backend-app.render.com/api`).
 
-### `npm run build` fails to minify
+-----
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🤝 Contributing
+
+Feel free to fork the repository, make improvements, and submit pull requests.
+
+-----
+
+## 📄 License
+
+[Optional: Add your license information here, e.g., MIT License]
